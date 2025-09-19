@@ -1352,7 +1352,7 @@ public class SimpleExoPlayer extends BasePlayer implements ExoPlayer {
   }
 
   @Override
-  public void setCodecParameter(CodecParameter codecParameter) {
+  public void setCodecParameter(@Nullable CodecParameter codecParameter) {
     blockUntilConstructorFinished();
     player.setCodecParameter(codecParameter);
   }
@@ -1363,8 +1363,6 @@ public class SimpleExoPlayer extends BasePlayer implements ExoPlayer {
     blockUntilConstructorFinished();
     player.setCodecParametersChangeListener(codecParametersChangeListener);
   }
-
-
 
   /* package */ void setThrowsWhenUsingWrongThread(boolean throwsWhenUsingWrongThread) {
     blockUntilConstructorFinished();

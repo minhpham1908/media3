@@ -40,7 +40,6 @@ import androidx.media3.common.AuxEffectInfo;
 import androidx.media3.common.C;
 import androidx.media3.common.CodecParameter;
 import androidx.media3.common.CodecParametersChangeListener;
-import androidx.media3.common.DeviceInfo;
 import androidx.media3.common.Effect;
 import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
@@ -1965,11 +1964,28 @@ public interface ExoPlayer extends Player {
   @UnstableApi
   void setImageOutput(@Nullable ImageOutput imageOutput);
 
-  /** Set the CodecParameters */
+  /**
+   * Sets a parameter on the underlying {@link android.media.MediaCodec} instances, or clears all
+   * previously set parameters.
+   *
+   * <p>This method is asynchronous. The parameter will be applied to the renderers on the playback
+   * thread. If the underlying decoder does not support the parameter, it will be ignored.
+   *
+   * @param codecParameter The {@link CodecParameter} to set, or {@code null} to clear all
+   *     previously set parameters.
+   */
   @UnstableApi
-  void setCodecParameter(CodecParameter codecParameter);
+  void setCodecParameter(@Nullable CodecParameter codecParameter);
 
-  /** Set the CodecParametersChangeListener */
+  /**
+   * Sets a listener for codec parameter changes.
+   *
+   * <p>This method is asynchronous. The listener will be set on the renderers on the playback
+   * thread.
+   *
+   * @param listener The {@link CodecParametersChangeListener} to set, or {@code null} to remove a
+   *     previously set listener.
+   */
   @UnstableApi
-  void setCodecParametersChangeListener(@Nullable CodecParametersChangeListener codecParametersChangeListener);
+  void setCodecParametersChangeListener(@Nullable CodecParametersChangeListener listener);
 }

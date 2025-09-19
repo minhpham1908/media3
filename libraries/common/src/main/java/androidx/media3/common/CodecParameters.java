@@ -1,83 +1,84 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package androidx.media3.common;
 
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Bundle;
-
+import androidx.annotation.Nullable;
+import androidx.media3.common.util.UnstableApi;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 
-/**
- * A {@link CodecParameters} instance provides the possibility to store/cache a set of {@link CodecParameter}.
- * Furthermore, some conversion functions ({@link CodecParameters#setFromMediaFormat}, {@link CodecParameters#addToMediaFormat}
- * and {@link CodecParameters#toBundle}) are given.
- */
-public class CodecParameters {
+/** A collection of {@link CodecParameter} objects. */
+@UnstableApi
+public final class CodecParameters {
 
-  private static final String TAG = "CodecParameters";
+  private final Map<String, CodecParameter> codecParameters;
 
-  /**
-   * A hashmap for storing several codec parameters.
-   */
-  private final HashMap<String, CodecParameter> codecParameters;
-
-  /**
-   * Creates a new codec parameters instance.
-   */
+  /** Creates an instance. */
   public CodecParameters() {
     codecParameters = new HashMap<>();
   }
 
-
   /**
-   * Set, replace or remove a codec parameter in/from the cache.
-   * If the value type of the codec parameter is of value type VALUETYPE_NULL, the
-   * cached codec parameter will be removed.
+   * Sets, replaces, or removes a codec parameter in the collection.
    *
-   * @param param A {@link CodecParameter} to be set, replaced or removed in/from the cache.
+   * <p>If the {@link CodecParameter#valueType} is {@link CodecParameter#TYPE_NULL}, the parameter
+   * with the given key will be removed.
+   *
+   * @param param The {@link CodecParameter} to set, replace, or remove.
    */
   public void set(CodecParameter param) {
-    if (param.valueType == CodecParameter.VALUETYPE_NULL) {
+    if (param.valueType == CodecParameter.TYPE_NULL) {
       codecParameters.remove(param.key);
     } else {
       codecParameters.put(param.key, param);
     }
   }
 
-  /**
-   * Get the hashmap of the cached codec parameters.
-   *
-   * @returns The hashmap of cached codec parameters.
-   */
-  public HashMap<String, CodecParameter> get() {
+  /** Returns the map of codec parameters in this collection. */
+  public Map<String, CodecParameter> get() {
     return codecParameters;
   }
 
   /**
-   * Get a cached codec parameter according to its key.
+   * Returns a codec parameter from the collection by its key.
    *
    * @param key A string representing the key of the codec parameter.
-   * @returns The requested {@link CodecParameter}.
+   * @return The requested {@link CodecParameter}, or {@code null} if not found.
    */
-  public @Nullable CodecParameter get(String key) {
+  @Nullable
+  public CodecParameter get(String key) {
     return codecParameters.get(key);
   }
 
-  /**
-   * Remove all cached codec parameters from the cache.
-   */
+  /** Removes all codec parameters from the collection. */
   public void clear() {
     codecParameters.clear();
   }
 
   /**
-   * Convert the cached codec parameters to a bundle.
+   * Converts the collection of codec parameters to a {@link Bundle}.
    *
-   * @return A {@link Bundle} containing the cached codec parameters.
+   * @return A {@link Bundle} containing the codec parameters.
    */
   public Bundle toBundle() {
     Bundle bundle = new Bundle();
@@ -86,22 +87,22 @@ public class CodecParameters {
       CodecParameter param = entry.getValue();
 
       switch (param.valueType) {
-        case CodecParameter.VALUETYPE_INT:
+        case CodecParameter.TYPE_INT:
           bundle.putInt(key, (int) param.value);
           break;
-        case CodecParameter.VALUETYPE_LONG:
+        case CodecParameter.TYPE_LONG:
           bundle.putLong(key, (long) param.value);
           break;
-        case CodecParameter.VALUETYPE_FLOAT:
+        case CodecParameter.TYPE_FLOAT:
           bundle.putFloat(key, (float) param.value);
           break;
-        case CodecParameter.VALUETYPE_STRING:
+        case CodecParameter.TYPE_STRING:
           bundle.putString(key, (String) param.value);
           break;
-        case CodecParameter.VALUETYPE_BYTE_BUFFER:
+        case CodecParameter.TYPE_BYTE_BUFFER:
           bundle.putByteArray(key, ((ByteBuffer) param.value).array());
           break;
-        case CodecParameter.VALUETYPE_NULL:
+        case CodecParameter.TYPE_NULL:
         default:
           break;
       }
@@ -110,121 +111,115 @@ public class CodecParameters {
   }
 
   /**
-   * Convert the entries of a MediaFormat to codec parameters and cache them.
+   * Populates this collection from the entries of a {@link MediaFormat}.
    *
-   * @param mediaFormat The media format to be converted and cached.
-   * @param filterKeys  A list of media format entry keys which should be converted and cached.
-   *                    If null, all entries in the media format will be cached.
+   * @param mediaFormat The {@link MediaFormat} from which to populate this collection.
+   * @param filterKeys A list of {@link MediaFormat} entry keys that should be included. If {@code
+   *     null}, all entries in the media format will be included (requires API 29+).
    */
-  public void setFromMediaFormat(MediaFormat mediaFormat, @Nullable ArrayList<String> filterKeys) {
-    CodecParameter param;
+  public void setFromMediaFormat(MediaFormat mediaFormat, @Nullable List<String> filterKeys) {
     if (filterKeys == null) {
       if (Build.VERSION.SDK_INT >= 29) {
         Set<String> keys = mediaFormat.getKeys();
         for (String key : keys) {
           int type = mediaFormat.getValueTypeForKey(key);
+          @Nullable Object value;
+          int valueType;
           switch (type) {
             case MediaFormat.TYPE_INTEGER:
-              param = new CodecParameter(key, mediaFormat.getInteger(key),
-                  CodecParameter.VALUETYPE_INT);
-              codecParameters.put(key, param);
+              value = mediaFormat.getInteger(key);
+              valueType = CodecParameter.TYPE_INT;
               break;
             case MediaFormat.TYPE_LONG:
-              param = new CodecParameter(key, mediaFormat.getLong(key),
-                  CodecParameter.VALUETYPE_LONG);
-              codecParameters.put(key, param);
+              value = mediaFormat.getLong(key);
+              valueType = CodecParameter.TYPE_LONG;
               break;
             case MediaFormat.TYPE_FLOAT:
-              param = new CodecParameter(key, mediaFormat.getFloat(key),
-                  CodecParameter.VALUETYPE_FLOAT);
-              codecParameters.put(key, param);
+              value = mediaFormat.getFloat(key);
+              valueType = CodecParameter.TYPE_FLOAT;
               break;
             case MediaFormat.TYPE_STRING:
-              param = new CodecParameter(key, mediaFormat.getString(key),
-                  CodecParameter.VALUETYPE_STRING);
-              codecParameters.put(key, param);
+              value = mediaFormat.getString(key);
+              valueType = CodecParameter.TYPE_STRING;
               break;
             case MediaFormat.TYPE_BYTE_BUFFER:
-              param = new CodecParameter(key, mediaFormat.getByteBuffer(key),
-                  CodecParameter.VALUETYPE_BYTE_BUFFER);
-              codecParameters.put(key, param);
+              value = mediaFormat.getByteBuffer(key);
+              valueType = CodecParameter.TYPE_BYTE_BUFFER;
               break;
             case MediaFormat.TYPE_NULL:
             default:
-              break;
+              continue;
           }
+          codecParameters.put(key, new CodecParameter(key, value, valueType));
         }
-      } else {
-        // not implemented
       }
     } else {
       for (String key : filterKeys) {
         if (mediaFormat.containsKey(key)) {
           @Nullable Object value = null;
-          @CodecParameter.ValueType int type = CodecParameter.VALUETYPE_NULL;
+          @CodecParameter.ValueType int type = CodecParameter.TYPE_NULL;
           boolean success = false;
           try {
             value = mediaFormat.getInteger(key);
-            type = CodecParameter.VALUETYPE_INT;
+            type = CodecParameter.TYPE_INT;
             success = true;
           } catch (Exception e) {
-            e.printStackTrace();
+            // Do nothing.
           }
 
           if (!success) {
             try {
               value = mediaFormat.getLong(key);
-              type = CodecParameter.VALUETYPE_LONG;
+              type = CodecParameter.TYPE_LONG;
               success = true;
             } catch (Exception e) {
-              e.printStackTrace();
+              // Do nothing.
             }
           }
 
           if (!success) {
             try {
               value = mediaFormat.getFloat(key);
-              type = CodecParameter.VALUETYPE_FLOAT;
+              type = CodecParameter.TYPE_FLOAT;
               success = true;
             } catch (Exception e) {
-              e.printStackTrace();
+              // Do nothing.
             }
           }
 
           if (!success) {
             try {
               value = mediaFormat.getString(key);
-              type = CodecParameter.VALUETYPE_STRING;
+              type = CodecParameter.TYPE_STRING;
               success = true;
             } catch (Exception e) {
-              e.printStackTrace();
+              // Do nothing.
             }
           }
 
           if (!success) {
             try {
               value = mediaFormat.getByteBuffer(key);
-              type = CodecParameter.VALUETYPE_BYTE_BUFFER;
+              type = CodecParameter.TYPE_BYTE_BUFFER;
               success = true;
             } catch (Exception e) {
-              e.printStackTrace();
+              // Do nothing.
             }
           }
 
           if (success) {
-            param = new CodecParameter(key, value, type);
-            codecParameters.put(param.key, param);
+            codecParameters.put(key, new CodecParameter(key, value, type));
           }
         }
       }
     }
   }
 
-
   /**
-   * Append/overwrite the entries of a MediaFormat by all cached codec parameters.
+   * Adds all parameters from this collection to a {@link MediaFormat}. Existing keys in the {@link
+   * MediaFormat} will be overwritten.
    *
-   * @param mediaFormat The media format to which codec parameters should be added.
+   * @param mediaFormat The {@link MediaFormat} to which codec parameters should be added.
    */
   public void addToMediaFormat(MediaFormat mediaFormat) {
     for (Map.Entry<String, CodecParameter> entry : codecParameters.entrySet()) {
@@ -232,22 +227,22 @@ public class CodecParameters {
       CodecParameter param = entry.getValue();
 
       switch (param.valueType) {
-        case CodecParameter.VALUETYPE_INT:
+        case CodecParameter.TYPE_INT:
           mediaFormat.setInteger(key, (int) param.value);
           break;
-        case CodecParameter.VALUETYPE_LONG:
+        case CodecParameter.TYPE_LONG:
           mediaFormat.setLong(key, (long) param.value);
           break;
-        case CodecParameter.VALUETYPE_FLOAT:
+        case CodecParameter.TYPE_FLOAT:
           mediaFormat.setFloat(key, (float) param.value);
           break;
-        case CodecParameter.VALUETYPE_STRING:
+        case CodecParameter.TYPE_STRING:
           mediaFormat.setString(key, (String) param.value);
           break;
-        case CodecParameter.VALUETYPE_BYTE_BUFFER:
+        case CodecParameter.TYPE_BYTE_BUFFER:
           mediaFormat.setByteBuffer(key, (ByteBuffer) param.value);
           break;
-        case CodecParameter.VALUETYPE_NULL:
+        case CodecParameter.TYPE_NULL:
         default:
           break;
       }

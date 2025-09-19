@@ -32,7 +32,6 @@ import android.media.MediaCrypto;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Build;
 import android.os.Handler;
 import android.util.Pair;
 import androidx.annotation.CallSuper;
@@ -117,6 +116,14 @@ public class MediaCodecAudioRenderer extends MediaCodecRenderer implements Media
   private final AudioSink audioSink;
   @Nullable private final LoudnessCodecController loudnessCodecController;
 
+  /**
+   * A holder for codec parameters that are persistently applied to the underlying {@link
+   * MediaCodec}.
+   *
+   * @see ExoPlayer#setCodecParameter(CodecParameter)
+   */
+  private final CodecParameters codecParameters;
+
   private int codecMaxInputSize;
   private boolean codecNeedsDiscardChannelsWorkaround;
   private boolean codecNeedsVorbisToAndroidChannelMappingWorkaround;
@@ -133,10 +140,12 @@ public class MediaCodecAudioRenderer extends MediaCodecRenderer implements Media
   private boolean isStarted;
   private long nextBufferToWritePresentationTimeUs;
 
-  /** {@link CodecParameters} instance used for caching several {@link CodecParameter} **/
-  private final CodecParameters codecParameters = new CodecParameters();
-  @Nullable protected CodecParametersChangeListener codecParametersChangeListener = null;
-
+  /**
+   * A listener for codec parameter changes.
+   *
+   * @see ExoPlayer#setCodecParametersChangeListener(CodecParametersChangeListener)
+   */
+  @Nullable private CodecParametersChangeListener codecParametersChangeListener;
 
   /**
    * @param context A context.
@@ -317,6 +326,7 @@ public class MediaCodecAudioRenderer extends MediaCodecRenderer implements Media
     eventDispatcher = new EventDispatcher(eventHandler, eventListener);
     nextBufferToWritePresentationTimeUs = C.TIME_UNSET;
     audioSink.setListener(new AudioSinkListener());
+    codecParameters = new CodecParameters();
   }
 
   @Override
@@ -938,12 +948,8 @@ public class MediaCodecAudioRenderer extends MediaCodecRenderer implements Media
         } else {
           this.codecParameters.set((CodecParameter) message);
         }
-
         @Nullable MediaCodecAdapter codec = getCodec();
-        if (codec == null) {
-          return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        if (codec != null) {
           codec.setParameters(codecParameters.toBundle());
         }
         break;
@@ -1071,7 +1077,6 @@ public class MediaCodecAudioRenderer extends MediaCodecRenderer implements Media
     }
 
     codecParameters.addToMediaFormat(mediaFormat);
-
     return mediaFormat;
   }
 

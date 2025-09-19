@@ -1985,7 +1985,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
   }
 
   @Override
-  public void setCodecParameter(CodecParameter codecParameter) {
+  public void setCodecParameter(@Nullable CodecParameter codecParameter) {
     verifyApplicationThread();
     for (Renderer renderer : renderers) {
       createMessage(renderer).setType(MSG_SET_CODEC_PARAMETER).setPayload(codecParameter).send();
@@ -1997,8 +1997,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
       @Nullable CodecParametersChangeListener codecParametersChangeListener) {
     verifyApplicationThread();
     for (Renderer renderer : renderers) {
-      createMessage(renderer).setType(MSG_SET_CODEC_PARAMETERS_CHANGED_LISTENER)
-          .setPayload(codecParametersChangeListener).send();
+      createMessage(renderer)
+          .setType(MSG_SET_CODEC_PARAMETERS_CHANGED_LISTENER)
+          .setPayload(codecParametersChangeListener)
+          .send();
     }
   }
 
