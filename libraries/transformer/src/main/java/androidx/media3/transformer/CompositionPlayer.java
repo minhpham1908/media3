@@ -64,7 +64,6 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.SimpleBasePlayer;
 import androidx.media3.common.Timeline;
-import androidx.media3.common.TrackSelectionParameters;
 import androidx.media3.common.VideoFrameProcessingException;
 import androidx.media3.common.VideoGraph;
 import androidx.media3.common.VideoSize;
@@ -2050,9 +2049,6 @@ public final class CompositionPlayer extends SimpleBasePlayer {
               context,
               /* listener= */ CompositionPlayer.this::onVideoTrackSelection,
               /* sequenceIndex= */ inputIndex);
-      if(inputIndex == 0) {
-        trackSelector.setParameters(new TrackSelectionParameters.Builder().setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true).build());
-      }
       @SuppressLint("VisibleForTests") // Calls ExoPlayer.Builder.setClock()
       ExoPlayer.Builder playerBuilder =
           new ExoPlayer.Builder(context)
